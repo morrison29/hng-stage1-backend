@@ -22,7 +22,7 @@ https://hng-stage1-backend.up.railway.app/
 
 ## Repository
 
-https://github.com/your-username/your-repo-name
+https://github.com/morrison29/hng-stage1-backend
 
 ---
 
