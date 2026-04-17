@@ -78,9 +78,9 @@ async def create_profile(payload: CreateProfile, db: Session = Depends(get_db)):
         gender = gender_data['gender'].lower(),
         gender_probability = gender_data['probability'],
         sample_size = gender_data['count'],
-        age = age_data['age'].lower(),  
+        age = age_data['age'],  
         age_group = get_age_group(age_data['age']),
-        country_id = top_country['country_id'].lower.(),
+        country_id = top_country['country_id'].lower(),
         country_probability = top_country['probability'],
         created_at = datetime.utcnow()
     )
