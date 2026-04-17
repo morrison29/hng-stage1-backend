@@ -55,7 +55,7 @@ async def create_profile(payload: CreateProfile, db: Session = Depends(get_db)):
                 "country_probability": existing_name.country_probability,
                 "created_at": existing_name.created_at.isoformat() + "Z"
             }
-        }
+        })
     
     try:
        gender_data, age_data, nation_data = await fetch_data_from_external_api(name)
