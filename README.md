@@ -16,7 +16,7 @@ Exposes endpoints to manage and retrieve stored profiles.
 
 ## Base URL
 
-https://your-api-url.com
+https://hng-stage1-backend.up.railway.app/
 
 ---
 
