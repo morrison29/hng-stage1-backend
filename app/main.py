@@ -21,7 +21,7 @@ Base.metadata.create_all(bind=engine)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -39,7 +39,8 @@ async def create_profile(payload: CreateProfile, db: Session = Depends(get_db)):
     
     existing_name = db.query(Profile).filter(Profile.name == name).first()
     if existing_name:
-        return {
+        return JSONResponse(status_code=201,
+           content={
             "status": "success",
             "message": "Profile already exists",
             "data": {
@@ -56,8 +57,10 @@ async def create_profile(payload: CreateProfile, db: Session = Depends(get_db)):
             }
         }
     
-    gender_data, age_data, nation_data = await fetch_data_from_external_api(name)
-
+    try:
+       gender_data, age_data, nation_data = await fetch_data_from_external_api(name)
+    except Exception:
+       raise HTTPException(status_code=502, detail="External API failed")
     if gender_data['gender'] is None or gender_data['count'] == 0:
         raise HTTPException(status_code=502, detail="Genderize returned an invalid response")
     
@@ -72,12 +75,12 @@ async def create_profile(payload: CreateProfile, db: Session = Depends(get_db)):
     profile = Profile(
         id = str(uuid7()),
         name = name,
-        gender = gender_data['gender'],
+        gender = gender_data['gender'].lower(),
         gender_probability = gender_data['probability'],
         sample_size = gender_data['count'],
-        age = age_data['age'],  
+        age = age_data['age'].lower(),  
         age_group = get_age_group(age_data['age']),
-        country_id = top_country['country_id'],
+        country_id = top_country['country_id'].lower.(),
         country_probability = top_country['probability'],
         created_at = datetime.utcnow()
     )
