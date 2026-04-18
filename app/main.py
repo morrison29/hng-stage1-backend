@@ -126,27 +126,30 @@ async def create_profile(payload: CreateProfile, db: Session = Depends(get_db)):
         }
     )
 
-@app.get("/api/profiles/{id}")
+@app.get("/api/profiles/{id}", status_code=200)
 def get_profile(id: str, db: Session = Depends(get_db)):
     profile = db.query(Profile).filter(Profile.id == id).first()
     if not profile:
         raise HTTPException(status_code=404, detail={"status": "error", "message": "Profile not found"})
 
-    return {
-        "status": "success",
-        "data": {
-            "id": profile.id,
-            "name": profile.name,
-            "gender": profile.gender,
-            "gender_probability": profile.gender_probability,
-            "sample_size": profile.sample_size,
-            "age": profile.age,
-            "age_group": profile.age_group,
-            "country_id": profile.country_id,
-            "country_probability": profile.country_probability,
-            "created_at": profile.created_at.isoformat() + "Z"
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "success",
+            "data": {
+                "id": profile.id,
+                "name": profile.name,
+                "gender": profile.gender,
+                "gender_probability": profile.gender_probability,
+                "sample_size": profile.sample_size,
+                "age": profile.age,
+                "age_group": profile.age_group,
+                "country_id": profile.country_id,
+                "country_probability": profile.country_probability,
+                "created_at": profile.created_at.isoformat() + "Z"
+            }
         }
-    }
+    )
 
 
 
@@ -167,27 +170,48 @@ def get_profiles(
         query = query.filter(func.lower(Profile.country_id) == country_id.lower())
 
     profiles = query.all()
-    return {
-        "status": "success",
-        "count": len(profiles),
-        "data": [
-            {
-                "id": profile.id,
-                "name": profile.name,
-                "gender": profile.gender,
-                "age": profile.age,
-                "age_group": profile.age_group,
-                "country_id": profile.country_id,
-            }
-            for profile in profiles
-        ]
-    }
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "success",
+            "count": len(profiles),
+            "data": [
+                {
+                    "id": profile.id,
+                    "name": profile.name,
+                    "gender": profile.gender,
+                    "age": profile.age,
+                    "age_group": profile.age_group,
+                    "country_id": profile.country_id,
+                }
+                for profile in profiles
+            ]
+        }
+    )
 
 @app.delete("/api/profiles/{id}", status_code=204)
 def delete_profile(id: str, db: Session = Depends(get_db)):
 
+    if not id:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "status": "error",
+                "message": "ID parameter is required"
+            }
+        )
+    
+    if not isinstance(id, str):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "status": "error",
+                "message": "ID must be a string"
+            }
+        )
     profile = db.query(Profile).filter(Profile.id == id).first()
 
+    
     if not profile:
         raise HTTPException(
             status_code=404,
@@ -196,10 +220,20 @@ def delete_profile(id: str, db: Session = Depends(get_db)):
                 "message": "Profile not found"
             }
         )
-
-    db.delete(profile)
-    db.commit()
-
+    
+    #server error handling for database issues
+    try:
+        db.delete(profile)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "message": "An error occurred while deleting the profile"
+            }
+        ) from e
     return Response(status_code=204)
 
 @app.exception_handler(RequestValidationError)
