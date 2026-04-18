@@ -26,13 +26,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the FastAPI application!"}
 
-@app.post("/api/profiles/")
+@app.post("/api/profiles/", status_code=201)
 async def create_profile(payload: CreateProfile, db: Session = Depends(get_db)):
     name = payload.name.strip().lower()
+    if name.isdigit():
+        raise HTTPException(status_code=422, detail="Name cannot be a number")
 
     if not name:
         raise HTTPException(status_code=400, detail="Name cannot be empty")
@@ -59,14 +62,32 @@ async def create_profile(payload: CreateProfile, db: Session = Depends(get_db)):
     gender_data, age_data, nation_data = await fetch_data_from_external_api(name)
 
     if gender_data['gender'] is None or gender_data['count'] == 0:
-        raise HTTPException(status_code=502, detail="Genderize returned an invalid response")
+        return JSONResponse(
+            status_code=502,
+            content={
+                "status": "error",
+                "message": "Genderize returned an invalid response"
+            }
+        )
     
     if age_data['age'] is None or age_data['count'] == 0:
-        raise HTTPException(status_code=502, detail="Agify returned an invalid response")
-    
+        return JSONResponse(
+            status_code=502,
+            content={
+                "status": "error",
+                "message": "Agify returned an invalid response"
+            }
+        )
+
     if not nation_data['country']:
-        raise HTTPException(status_code=502, detail="Nationalize returned an invalid response")
-    
+        return JSONResponse(
+            status_code=502,
+            content={
+                "status": "error",
+                "message": "Nationalize returned an invalid response"
+            }
+        )
+
     top_country = max(nation_data['country'], key=lambda x: x['probability'])
 
     profile = Profile(
@@ -127,10 +148,6 @@ def get_profile(id: str, db: Session = Depends(get_db)):
         }
     }
 
-# @app.get("/debug")
-# def debug(db: Session = Depends(get_db)):
-#     profiles = db.query(Profile).all()
-#     return profiles
 
 
 
@@ -187,6 +204,16 @@ def delete_profile(id: str, db: Session = Depends(get_db)):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = exc.errors()
+    for error in errors:
+        if error['loc'][-1] == 'name':
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "status": "error",
+                    "message": "Name field is required and must be a string"
+                }
+            )
     return JSONResponse(
         status_code=422,
         content={

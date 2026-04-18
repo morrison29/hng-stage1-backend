@@ -1,5 +1,5 @@
 ## Overview
-# Backend Wizards Stage 1 – API
+
 
 This project is a RESTful API that:
 
@@ -16,14 +16,13 @@ Exposes endpoints to manage and retrieve stored profiles.
 
 ## Base URL
 
-https://your-api-url.com
+hng-stage1-backend.up.railway.app
 
 ---
 
 ## Repository
 
-https://github.com/your-username/your-repo-name
-
+https://github.com/morrison29/hng-stage1-backend
 ---
 
 ## Tech Stack
@@ -113,8 +112,5 @@ Status codes:
 3. Install dependencies  
 4. Run the server with uvicorn  
 
----
 
-## API Docs
 
-http://127.0.0.1:8000/docs
